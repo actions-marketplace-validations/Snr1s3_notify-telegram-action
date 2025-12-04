@@ -1,7 +1,8 @@
 name: Notify Me Through Telegram
 description: This GitHub Action sends a Telegram notification whenever specified workflows finish running in your repository. 
-icon: package
-color: red
+icon: message-circle
+color: blue
+
 on:
   workflow_run:
     workflows: ["Example Name"] # Add all the workflows name to get notified when those are efinished
