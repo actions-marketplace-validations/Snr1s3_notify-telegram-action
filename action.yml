@@ -1,5 +1,7 @@
 name: Notify Me Through Telegram
+
 description: Send a Telegram message about a workflow run
+
 inputs:
   telegram_token:
     description: Telegram bot token
@@ -21,8 +23,3 @@ runs:
           -d chat_id="${{ inputs.telegram_chat_id }}" \
           -d parse_mode=Markdown \
           -d text="${{ inputs.message }}"
-
-
-
-
-    
