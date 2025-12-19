@@ -1,68 +1,120 @@
 # Notify Me Through Telegram
 
-This GitHub Action sends a Telegram notification whenever specified workflows finish running in your repository. The notification includes the repository name, commit message, author, workflow name, and the workflow status (success or failure), helping you monitor your CI/CD results in real time.
+A lightweight **GitHub Composite Action** that sends a Telegram message when a workflow finishes running. It helps you monitor CI/CD results in real time by delivering clear, Markdown-formatted notifications directly to Telegram.
 
-## Features
+## ✨ Features
 
-- Notifies you on Telegram when a workflow completes
-- Shows repository name, commit message, author, workflow name, and status
-- Uses Markdown formatting for clear, readable messages
+* 📣 Sends Telegram notifications on workflow completion
+* 📦 Includes repository name, commit message, author, workflow name, and status
+* 🟢🔴 Clearly indicates success or failure
+* 📝 Uses Markdown formatting for readability
+* 🧩 Implemented as a reusable composite action
 
-## Usage
+---
 
-1. **Add the Action to your workflow:**
-
-   Copy the contents of `action.yml` into your workflow file (e.g., `.github/workflows/notify-me.yml`).
-
-2. **Configure your workflow:**
-
-   - Replace `"Example Name"` in `workflows: ["Example Name"]` with the names of the workflows you want to monitor (e.g., `"Go Test"`).
-   - Make sure your workflow includes the `workflow_run` trigger.
-
-3. **Set up secrets:**
-
-   - Go to your repository settings → Secrets and variables → Actions.
-   - Add these secrets:
-     - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token from BotFather.
-     - `TELEGRAM_CHAT_ID`: The chat ID where notifications should be sent.
-
-## Example Workflow
+## 📂 Action Definition (`action.yml`)
 
 ```yaml
+name: Notify Me Through Telegram
+description: Send a Telegram message about a workflow run
+
+inputs:
+  telegram_token:
+    description: Telegram bot token
+    required: true
+  telegram_chat_id:
+    description: Telegram chat ID
+    required: true
+  message:
+    description: Message text (Markdown supported)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Send Telegram notification
+      shell: bash
+      run: |
+        curl -s -X POST "https://api.telegram.org/bot${{ inputs.telegram_token }}/sendMessage" \
+          -d chat_id="${{ inputs.telegram_chat_id }}" \
+          -d parse_mode=Markdown \
+          -d text="${{ inputs.message }}"
+```
+
+---
+
+## 🚀 Usage
+
+### 1. Add the Action to Your Repository
+
+Create the following file in your repository:
+
+```
+.github/actions/notify-telegram/action.yml
+```
+
+Paste the **Action Definition** above into that file.
+
+---
+
+### 2. Configure a Workflow to Trigger Notifications
+
+This example listens for the completion of a workflow named **"Go Test"** and sends a Telegram message with relevant details.
+
+```yaml
+name: Notify Me
+
 on:
   workflow_run:
-    workflows: ["Go Test"] ##Change it for your Workflows
-    types:
-      - completed
+    workflows: ["Test and Build", "Deploy mdBook site to Pages"]
+    types: [completed]
+
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - name: Send Telegram notification
-        run: |
-          TITLE="🔔 *${{ github.repository }}*"
-          COMMIT_MSG="${{ github.event.workflow_run.head_commit.message }}"
-          AUTHOR="${{ github.event.workflow_run.head_commit.author.name }}"
-          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_commit.id }}"
-          WORKFLOW="${{ github.event.workflow_run.name }}"
-          STATUS=""
-          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
-            STATUS="✅ *Workflow:* ${WORKFLOW} _succeeded_"
-          else
-            STATUS="❎ *Workflow:* ${WORKFLOW} _failed_"
-          fi
-          MSG="${TITLE} *Commit:* [${COMMIT_MSG}](${COMMIT_URL}) *Author:* ${AUTHOR} ${STATUS}"
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d parse_mode=Markdown \
-            -d text="${MSG}"
+        uses: Snr1s3/notify-telegram-action@v1.0.3
+        with:
+          telegram_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: |
+            🔔 *${{ github.repository }}*
+            *Workflow:* ${{ github.event.workflow_run.name }}
+            *Conclusion:* ${{ github.event.workflow_run.conclusion }}
+            *Run:* ${{ github.event.workflow_run.html_url }}
 ```
-
-## Notes
-
-- Make sure your Telegram bot is started and can send messages to your chat.
-- You can monitor multiple workflows by listing their names in the `workflows` array.
 
 ---
 
-Feel free to customize this README for your repository!
+## 🔐 Secrets Configuration
+
+Add the following secrets in your repository:
+
+1. Go to **Settings → Secrets and variables → Actions**
+2. Add:
+
+| Name                 | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| `TELEGRAM_BOT_TOKEN` | Bot token from **@BotFather**                  |
+| `TELEGRAM_CHAT_ID`   | Chat or channel ID where messages will be sent |
+
+---
+
+## 📝 Notes
+
+* Ensure your Telegram bot has been started (`/start`) and has permission to message the chat
+* To monitor multiple workflows, list them in the `workflows` array
+* This action supports **Markdown**, so you can fully customize your messages
+
+---
+
+## 🛠 Customization Ideas
+
+* Add timestamps to messages
+* Send different messages based on success/failure
+* Include links to workflow runs or pull requests
+
+---
+
+📬 **Enjoy real-time CI/CD updates on Telegram!**
